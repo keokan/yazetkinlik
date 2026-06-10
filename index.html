@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bilişim Teknolojileri</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600&display=swap');
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0; padding: 0;
+            background: #2a5298;
+            height: 100vh; overflow: hidden; position: relative;
+            user-select: none;
+        }
+
+        /* ===================== KİLİT EKRANI ===================== */
+        #lock-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(160deg, #1a3a6e 0%, #2a5298 50%, #1e4080 100%);
+            z-index: 10000; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            transition: transform 0.7s cubic-bezier(0.4,0,0.2,1), opacity 0.7s;
+        }
+        #lock-screen::before {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(ellipse at 60% 40%, rgba(255,255,255,0.06) 0%, transparent 70%);
+        }
+        #lock-screen.hidden { transform: translateY(-100%); opacity: 0; pointer-events: none; }
+
+        .lock-time {
+            position: relative; z-index:1;
+            font-size: 5em; font-weight: 200; color: white;
+            text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+            letter-spacing: -2px; line-height: 1;
+            margin-bottom: 4px;
+        }
+        .lock-date-top {
+            position: relative; z-index:1;
+            font-size: 1.2em; color: rgba(255,255,255,0.9);
+            text-shadow: 0 1px 8px rgba(0,0,0,0.5);
+            margin-bottom: 40px; font-weight: 400;
+        }
+        .lock-content {
+            position: relative; z-index: 1;
+            text-align: center; color: white;
+            background: rgba(30,70,160,0.55);
+            padding: 36px 48px; border-radius: 16px;
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+            animation: fadeUp 0.8s ease-out;
+        }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+
+        .lock-avatar {
+            width: 90px; height: 90px; border-radius: 50%;
+            margin-bottom: 14px; border: 3px solid rgba(255,255,255,0.7);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            background: white; padding: 3px;
+        }
+        .lock-name { font-size: 1.3em; font-weight: 600; margin-bottom: 4px; }
+        .lock-school { font-size: 0.9em; color: rgba(255,255,255,0.7); margin-bottom: 24px; }
+        .lock-btn {
+            padding: 10px 36px; font-size: 1em; font-weight: 600;
+            background: rgba(255,255,255,0.92); border: none; border-radius: 6px;
+            cursor: pointer; color: #1a1a2e; transition: all 0.2s;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+        }
+        .lock-btn:hover { background: #fff; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
+
+        /* ===================== MASAÜSTÜ ===================== */
+        #desktop {
+            display: none; flex-direction: column; flex-wrap: wrap;
+            padding: 16px 0 60px 8px; height: 100%;
+            opacity: 0; transition: opacity 0.6s ease-in;
+            align-content: flex-start;
+            background: linear-gradient(145deg, #b8cfe8 0%, #c9ddf0 40%, #bdd4ea 100%);
+        }
+
+        .desktop-icon {
+            display: flex; flex-direction: column; align-items: center;
+            color: white; padding: 8px; width: 82px; margin: 3px;
+            text-align: center; border: 1px solid transparent;
+            cursor: pointer; border-radius: 6px;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .desktop-icon:hover {
+            background: rgba(255,255,255,0.45);
+            border-color: rgba(0,100,200,0.3);
+        }
+        .desktop-icon:active { background: rgba(255,255,255,0.25); }
+        .desktop-icon .icon-img {
+            width: 52px; height: 52px; margin-bottom: 5px;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+            transition: transform 0.15s;
+        }
+        .desktop-icon:hover .icon-img { transform: scale(1.08); }
+        .desktop-icon span {
+            font-size: 0.8em; line-height: 1.25;
+            text-shadow: 0 1px 3px rgba(255,255,255,0.8);
+            color: #1a1a2e; font-weight: 600;
+        }
+
+        /* ===================== GÖREV ÇUBUĞU ===================== */
+        #taskbar {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 48px;
+            background: rgba(30,30,46,0.82); backdrop-filter: blur(28px);
+            display: none; align-items: center; padding: 0 12px;
+            z-index: 9000; border-top: 1px solid rgba(255,255,255,0.08);
+            opacity: 0; transition: opacity 0.5s ease-in;
+        }
+
+        #start-button {
+            width: 42px; height: 42px; display: flex; align-items: center;
+            justify-content: center; border-radius: 6px; cursor: pointer;
+            margin-right: 8px; transition: background 0.15s;
+        }
+        #start-button:hover, #start-button.active { background: rgba(255,255,255,0.12); }
+        #start-button img { height: 28px; width: auto; border-radius: 4px; }
+
+        #taskbar-icons { display: flex; height: 100%; align-items: center; flex-grow: 1; gap: 2px; }
+
+        .taskbar-icon {
+            max-width: 160px; min-width: 80px; height: 38px;
+            display: flex; align-items: center; padding: 0 10px;
+            border-radius: 5px; cursor: pointer; color: rgba(255,255,255,0.85);
+            font-size: 0.8em; background: rgba(255,255,255,0.07);
+            transition: background 0.15s; overflow: hidden; white-space: nowrap;
+        }
+        .taskbar-icon:hover { background: rgba(255,255,255,0.14); }
+        .taskbar-icon.active {
+            background: rgba(255,255,255,0.18);
+            border-bottom: 2px solid #0078D4;
+        }
+        .taskbar-icon img { width: 18px; height: 18px; margin-right: 7px; flex-shrink:0; }
+
+        #status-area {
+            height: 100%; display: flex; flex-direction: column;
+            align-items: flex-end; justify-content: center;
+            padding: 0 16px; color: rgba(255,255,255,0.85);
+            font-size: 0.78em; gap: 1px; cursor: default;
+        }
+        #status-area span { white-space: nowrap; }
+
+        /* ===================== BAŞLAT MENÜSÜ ===================== */
+        #start-menu {
+            position: fixed; bottom: 56px; left: 12px; width: 340px;
+            background: rgba(243,243,243,0.96); border-radius: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.28), 0 0 0 1px rgba(0,0,0,0.08);
+            z-index: 9001; display: none; flex-direction: column; padding: 20px;
+            box-sizing: border-box; animation: slideUp 0.18s ease-out;
+            backdrop-filter: blur(20px);
+        }
+        @keyframes slideUp { from { transform: translateY(12px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+        #start-menu h3 { margin: 0 0 14px; font-size: 0.88em; color: #555; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .start-apps { display: flex; gap: 8px; flex-wrap: wrap; }
+        .start-app-item {
+            display: flex; flex-direction: column; align-items: center;
+            padding: 10px 12px; border-radius: 6px; cursor: pointer; width: 72px; text-align:center;
+            transition: background 0.15s;
+        }
+        .start-app-item:hover { background: rgba(0,0,0,0.07); }
+        .start-app-item img { width: 36px; height: 36px; margin-bottom: 5px; }
+        .start-app-item span { font-size: 0.78em; color: #333; line-height: 1.2; }
+        .start-footer {
+            margin-top: auto; border-top: 1px solid #ddd; padding-top: 12px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .start-user { display: flex; align-items: center; gap: 10px; font-size: 0.88em; color: #333; font-weight: 600; }
+        .start-user img { width: 28px; border-radius: 50%; }
+        .start-power {
+            background: none; border: none; cursor: pointer; padding: 6px; border-radius: 4px;
+            transition: background 0.15s;
+        }
+        .start-power:hover { background: rgba(0,0,0,0.08); }
+        .start-power img { width: 18px; display: block; }
+
+        /* ===================== PENCERELER ===================== */
+        .window {
+            position: absolute; width: 660px; height: 480px;
+            background: #f3f3f3;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 0 1px rgba(0,0,0,0.1);
+            display: flex; flex-direction: column; overflow: hidden;
+            animation: popIn 0.18s cubic-bezier(0.34,1.3,0.64,1);
+        }
+        @keyframes popIn { from { transform: scale(0.93); opacity:0; } to { transform: scale(1); opacity:1; } }
+        .window.maximized { border-radius: 0 !important; }
+
+        /* Başlık çubuğu */
+        .title-bar {
+            height: 36px; background: #fff;
+            padding: 0 0 0 12px;
+            display: flex; align-items: center; justify-content: space-between;
+            font-size: 13px; color: #111; border-bottom: 1px solid #e0e0e0;
+            user-select: none; flex-shrink: 0;
+        }
+        .title-bar-left { display: flex; align-items: center; gap: 8px; }
+        .title-bar-left img { width: 16px; height: 16px; }
+
+        /* Adres/yol çubuğu (Dosya Gezgini benzeri) */
+        .window-toolbar {
+            background: #fafafa; border-bottom: 1px solid #e0e0e0;
+            padding: 6px 12px; display: flex; align-items: center; gap: 8px;
+            flex-shrink: 0;
+        }
+        .toolbar-nav-btn {
+            width: 28px; height: 28px; border: none; background: none;
+            border-radius: 4px; cursor: pointer; font-size: 14px; color: #555;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s;
+        }
+        .toolbar-nav-btn:hover { background: rgba(0,0,0,0.07); }
+        .toolbar-nav-btn:disabled { color: #ccc; cursor: default; }
+        .toolbar-path {
+            flex: 1; background: #fff; border: 1px solid #d0d0d0;
+            border-radius: 4px; padding: 4px 10px; font-size: 12px; color: #333;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .toolbar-search {
+            background: #fff; border: 1px solid #d0d0d0;
+            border-radius: 4px; padding: 4px 10px 4px 28px;
+            font-size: 12px; color: #333; width: 160px;
+            font-family: inherit; outline: none; position: relative;
+        }
+        .toolbar-search:focus { border-color: #0078D4; }
+        .search-wrap { position: relative; }
+        .search-wrap::before { content: '🔍'; position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 11px; }
+
+        /* Pencere kontrolleri */
+        .window-controls { display: flex; height: 36px; flex-shrink:0; }
+        .window-controls button {
+            background: none; border: none; width: 46px; height: 36px;
+            cursor: pointer; font-size: 13px; color: #444;
+            transition: background 0.15s; display:flex; align-items:center; justify-content:center;
+        }
+        .window-controls button:hover { background: rgba(0,0,0,0.07); }
+        .window-controls .close-btn:hover { background: #c42b1c; color: white; }
+
+        /* Pencere içeriği */
+        .window-body { display: flex; flex: 1; overflow: hidden; }
+
+        /* sidebar kaldırıldı */
+
+        /* Ana içerik */
+        .window-content { flex: 1; padding: 12px; overflow-y: auto; background: #fff; }
+
+        /* Dosya görünümü */
+        .file-explorer-view {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, 110px);
+            gap: 8px; align-content: start;
+        }
+        .file-item {
+            display: flex; flex-direction: column; align-items: center;
+            padding: 0 0 8px; border-radius: 7px; cursor: pointer;
+            text-align: center; border: 1px solid transparent;
+            transition: background 0.12s, border-color 0.12s;
+            overflow: hidden;
+        }
+        .file-item:hover { background: #d9ecff; border-color: #aad4f5; }
+        .file-item:active { background: #b8d9f5; }
+        .file-item-thumb {
+            width: 100%; height: 64px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 6px; flex-shrink: 0; border-radius: 6px 6px 0 0;
+        }
+        .file-item-thumb img { width: 38px; height: 38px; }
+        .file-item .file-label { font-size: 0.78em; color: #111; line-height: 1.25; word-break: break-word; padding: 0 4px; }
+
+        /* tür rozetleri kaldırıldı */
+
+        /* Status bar altı */
+        .window-statusbar {
+            background: #f0f0f0; border-top: 1px solid #e0e0e0;
+            padding: 3px 12px; font-size: 11px; color: #777;
+            display: flex; align-items: center; gap: 16px; flex-shrink:0;
+        }
+
+        /* ===================== İÇERİK DETAY PENCERESİ ===================== */
+        .content-detail {
+            display: flex; flex-direction: column; padding: 0;
+            height: 100%; overflow-y: auto;
+        }
+        .content-detail-hero {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e8f0fe 100%);
+            padding: 28px; display: flex; align-items: center; gap: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .content-detail-hero img {
+            width: 72px; height: 72px; border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        }
+        .content-detail-hero h2 { margin: 0 0 4px; color: #1a1a2e; font-size: 1.3em; }
+        .content-detail-badge {
+            display: inline-block; padding: 2px 10px; border-radius: 4px; font-size: 0.75em; font-weight: 700; text-transform: uppercase;
+        }
+        .content-detail-body { padding: 20px 24px; }
+        .content-detail-body p { line-height: 1.75; color: #444; font-size: 0.95em; margin: 0 0 18px; }
+        .content-detail-link {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 22px; background: #0078D4; color: white;
+            border: none; border-radius: 6px; font-size: 0.9em; font-weight: 600;
+            cursor: pointer; text-decoration: none;
+            transition: background 0.15s, transform 0.15s;
+        }
+        .content-detail-link:hover { background: #106ebe; transform: translateY(-1px); }
+
+        /* ===================== GENEL SCROLL ===================== */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.35); }
+
+        /* bildirim toast kaldırıldı */
+    </style>
+</head>
+<body>
+
+<!-- ==================== KİLİT EKRANI ==================== -->
+<div id="lock-screen">
+    <div class="lock-time" id="lock-time">00:00</div>
+    <div class="lock-date-top" id="lock-date-top"></div>
+    <div class="lock-content">
+        <img src="https://www.e-oguzkaan.com/assets/images/logo.png" class="lock-avatar" alt="Okul Logo">
+        <div class="lock-name">Oğuzkaan Koleji</div>
+        <div class="lock-school">Bilişim Teknolojileri</div>
+        <button class="lock-btn" onclick="unlockScreen()">🔓 Giriş Yap</button>
+    </div>
+</div>
+
+<!-- ==================== MASAÜSTÜ ==================== -->
+<div id="desktop"></div>
+
+<!-- ==================== GÖREV ÇUBUĞU ==================== -->
+<div id="taskbar">
+    <div id="start-button" onclick="toggleStartMenu()">
+        <img src="https://www.e-oguzkaan.com/assets/images/logo.png" alt="Başlat">
+    </div>
+    <div id="taskbar-icons"></div>
+    <div id="status-area">
+        <span id="taskbar-time"></span>
+        <span id="taskbar-date"></span>
+    </div>
+</div>
+
+<!-- ==================== BAŞLAT MENÜSÜ ==================== -->
+<div id="start-menu">
+    <h3>Hızlı Erişim</h3>
+    <div class="start-apps">
+        <div class="start-app-item" onclick="openExternalApp('https://scratch.mit.edu','Scratch')">
+            <img src="https://img.icons8.com/color/48/scratch.png"><span>Scratch</span>
+        </div>
+        <div class="start-app-item" onclick="openExternalApp('https://code.org/learn','Code.org')">
+            <img src="https://img.icons8.com/color/48/source-code.png"><span>Code.org</span>
+        </div>
+        <div class="start-app-item" onclick="openExternalApp('https://gcompris.net','GCompris')">
+            <img src="https://img.icons8.com/color/48/graduation-cap.png"><span>GCompris</span>
+        </div>
+        <div class="start-app-item" onclick="openExternalApp('https://www.eba.gov.tr','EBA')">
+            <img src="https://img.icons8.com/color/48/book.png"><span>EBA</span>
+        </div>
+    </div>
+    <div class="start-footer">
+        <div class="start-user">
+            <img src="https://www.e-oguzkaan.com/assets/images/logo.png">
+            <span>Oğuzkaan Koleji</span>
+        </div>
+        <button class="start-power" onclick="location.reload()" title="Kilitle">
+            <img src="https://img.icons8.com/ios-glyphs/30/shutdown.png">
+        </button>
+    </div>
+</div>
+
+<!-- Pencereler JS tarafından oluşturulacak -->
+
+<script>
+/* ============================================================
+   ✏️  İÇERİK YÖNETİM MERKEZİ
+   ============================================================
+   Yeni ders eklemek için sadece buraya bak!
+
+   Her klasörün "icerikler" listesine şu şekilde ekle:
+   {
+     title:  "İçerik Başlığı",
+     icon:   "https://img.icons8.com/fluency/96/...",
+     type:   "video" | "game" | "activity" | "link" | "info",
+     desc:   "Açıklama metni buraya",
+     link:   "https://..."    ← yoksa "" bırak
+   }
+
+   Yeni sınıf klasörü eklemek için KLASORLER dizisine
+   yeni bir obje eklemen yeterli.
+   ============================================================ */
+
+const KLASORLER = [
+    {
+        id: "anaokulu", label: "Anaokulu",
+        icon: "https://img.icons8.com/fluency/96/teddy-bear.png", color: "#FF6B6B",
+        icerikler: [
+            {
+                title: "GCompris",
+                icon: "https://img.icons8.com/fluency/96/controller.png",
+                img: "https://www.gcompris.net/images/gcompris-logo.png",
+                type: "game", link: "https://www.gcompris.net/index-tr.html",
+                desc: `GCompris, 2–10 yaş arası çocuklar için çok sayıda etkinlik içeren, yüksek kaliteli bir eğitim yazılımı paketidir.
+Kimi etkinlikler oyuna yöneliktir; ancak yine de eğitime katkıda bulunur.
+Aşağıda örneklerle etkinlik kategorilerinin bir listesine bakın:
+
+• bilgisayar keşfi: klavye, fare, dokunmatik ekran…
+• okuma: harfler, sözcükler, okuma pratiği, metin yazma…
+• aritmetik: sayılar, işlemler, tablo belleği, sayma, çift giriş tablosu…
+• bilim: kanal kilidi, su çevrimi, yenilenebilir enerji…
+• coğrafya: ülkeler, bölgeler, kültürler…
+• oyunlar: satranç, bellek, top hizalama, adam asmaca, üç taş…
+• diğer: renkler, şekiller, Braille, zamanı söyleme…
+
+Şu anda, GCompris 100'den fazla etkinlik sunar ve birçoğu da geliştirme aşamasındadır. GCompris özgür yazılımdır, gereksinimlerinize göre değiştirebilir, iyileştirebilir ve dünyanın her yanındaki çocuklarla paylaşabilirsiniz.
+Bilgisayarınıza veya tabletinize (uygulama mağazalarından) ücretsiz indirip kullanabilirsiniz.
+İndirmek için: gcompris.net`
+            },
+            {
+                title: "PBS Kids",
+                icon: "https://img.icons8.com/fluency/96/tv-show.png",
+                img: "https://pbskids.org/pbskids-social.jpg",
+                type: "game", link: "https://pbskids.org",
+                desc: `Amerika Birleşik Devletleri'nde hizmet veren PBS'e bağlı PBS Kids, Türkiye'deki TRT Çocuk benzeri bir televizyon kanalı ve medya platformudur. İçeriklerinin İngilizce sunulduğu bu platformda 2-8 yaş aralığındaki çocuklara yönelik eğitici ve eğlenceli içerikler bulunmaktadır.
+
+Eğlenceli videoların yanında çocukların severek oynadığı Games bölümü de bulunmakta. Oyunlarda İngilizce betimlemeli destek bulunsa da çocuklar veli desteği ile oyun içeriklerine kolaylıkla erişebilir.`
+            },
+            {
+                title: "Çizgi Çalışmaları",
+                icon: "https://img.icons8.com/fluency/96/edit.png",
+                img: "https://img.icons8.com/fluency/200/edit.png",
+                type: "activity", link: "https://dersekranda.com/veriler/okuyorum/assetsDosyalar/etkinliklerCizgiCalismalari/cizgiCalismalari/serbestCizgiCalismalari/index.html",
+                desc: `Çocukların bilgisayarda mouse, tablet veya cep telefonunda ise parmakları ya da dokunmatik kalem kullanarak serbest ve düzenli çizgi çalışmaları yapmalarını sağlayan online uygulamalar; ince motor kaslarının gelişimini desteklemektedir.`
+            },
+            {
+                title: "Code.org Pre-Reader",
+                icon: "https://img.icons8.com/fluency/96/code.png",
+                img: "https://code.org/shared/images/social-og-code-default.png",
+                type: "game", link: "https://studio.code.org/courses/pre-express-2021/units/1?viewAs=Instructor",
+                desc: `Her yaş grubu için farklı eğitim içerikleri barındıran code.org sitesinde okul öncesi çocuklar için kodlama ve bilgisayar becerilerine yönelik bu içerikte çocuklar okuma yazma bilmeden temel kodlamaya başlayabilir. En başta mouse ile sürükle bırak etkinlikleri ile başlayıp kurs ilerledikçe puzzle ve temel kodlama becerilerini geliştiren etkinlikler ile çocuklar kodlamaya ilk adımlarını atacaklar.
+
+Platforma eriştiğinizde varsayılan dil erişim sağladığınız cihazın dili ile aynıdır. Dil seçim ekranından Türkçe'yi seçerek devam edebilirsiniz.`
+            },
+            {
+                title: "CodeMonkey Jr.",
+                icon: "https://img.icons8.com/fluency/96/monkey.png",
+                img: "https://app.codemonkey.com/images/monkey-logo.svg",
+                type: "game", link: "https://www.codemonkey.com/hour-of-code/codemonkey-jr/",
+                desc: `Maymun hedeflere ulaşmak istiyor ama bunu tek başına yapması biraz zor gibi. Çocuklarımız maymunu yönlendirerek hedeflere ulaşmasını sağlıyor. Bunu yaparken de temel kodlama becerilerini geliştiriyor. Çocuklara yönelik arayüzü, kolay kullanımı ve Türkçe dil desteği ile okul öncesi çocuklara kodlamanın temellerini eğlenceli bir şekilde öğretiyor.
+
+Herhangi bir üyelik oluşturmadan kullanılabilir.`
+            },
+            {
+                title: "Kodable",
+                icon: "https://img.icons8.com/fluency/96/robot.png",
+                img: "https://img.icons8.com/fluency/200/robot.png",
+                type: "game", link: "https://www.kodable.com/hour-of-code/self-guided",
+                desc: `Okul öncesinden 2. sınıf düzeyine kadar olan yaş aralığına uygun, renkli karakterleri, basit arayüzü ve sürükle bırak metoduyla kodlamayı çocuklara sevdiren bu platform ile çocuklar kendi oluşturdukları karakterler ile hedefleri tamamlamaya çalışıyor. Oyun temelli kodlama yapısıyla çocuklar eğlenirken aynı zamanda algoritmik düşünmeyi ve problem çözme becerisini ediniyor.
+
+Üyelik oluşturmadan platforma erişebilirsiniz. Play butonuna tıklayarak kodlamaya başlayabilirsiniz.`
+            },
+            {
+                title: "Quiver Vision",
+                icon: "https://img.icons8.com/fluency/96/camera.png",
+                img: "https://quivervision.com/wp-content/uploads/2020/02/QuiverVision-Logo-2020.png",
+                type: "activity", link: "https://quivervision.com/",
+                desc: `QUIVER özellikle küçük yaş grubu çocuklarımızla kullanabileceğiniz artırılmış gerçeklik içeren eğlenceli bir web 2.0 aracıdır. Çocuklar çıktısını aldığımız dosyalar üzerinde çalışmalarını yaptıktan sonra telefonumuzdaki uygulamayı açıp dosyaların üzerine tuttuğumuzda 3 veya 4 boyutlu olarak resimleri gözlemleyebiliyoruz.
+
+Quiver uygulamasıyla kullanacağınız görsellerle önce boyama çalışması yapıp daha sonra Quiver uygulamasıyla etkileşimli hale getirirseniz, siz görseli hangi renge boyadıysanız canlanan karakterde sizin boyadığınız renkte canlanacaktır.`
+            },
+            {
+                title: "TinyTap",
+                icon: "https://img.icons8.com/fluency/96/puzzle.png",
+                img: "https://img.icons8.com/fluency/200/puzzle.png",
+                type: "game", link: "https://campus.tinytap.com/tr",
+                desc: `Çocuklar için etkileşimli öğrenme oyunları ve dijital hikâyeler oluşturma ve oynama platformudur. Özellikle anaokulu ve ilkokul düzeyindeki çocuklara yönelik olarak tasarlanmıştır. Hem öğretmenler hem de ebeveynler, çocuklara özel içerikler hazırlayabilir veya başkalarının hazırladığı içerikleri kullanabilirler.
+
+TinyTap, "öğrenmeyi oyunlaştırma" fikriyle yola çıkmış bir platformdur. Türkçe içerikler mevcuttur. Sağ üstten dil seçeneğine tıklayıp Türkçe'yi seçebilirsiniz.`
+            },
+            {
+                title: "Çevko - Boyama Oyunu",
+                icon: "https://img.icons8.com/fluency/96/paint-palette.png",
+                img: "https://img.icons8.com/fluency/200/paint-palette.png",
+                type: "game", link: "https://www.cevkococuk.org/index.php?option=com_content&view=article&id=9&catid=12&Itemid=106",
+                desc: `Çevko Çocuk sitesinde yer alan boyama oyunu ile çocuklarımız sanatsal becerilerini sergiliyor. Boyama oyununda yer alan birçok karakterden istediğini seçip tuvalin başına geçen çocuklar renk seçip tıkladığı alanı boyuyor.`
+            },
+            {
+                title: "TRT Çocuk - Oyun Dünyası",
+                icon: "https://img.icons8.com/fluency/96/star.png",
+                img: "https://www.trtcocuk.net.tr/assets/img/trt-cocuk-logo.png",
+                type: "game", link: "https://www.trtcocuk.net.tr/oyun",
+                desc: `Zeka oyunlarından macera oyunlarına birçok oyunun yer aldığı TRT Çocuk Oyun Dünyası çocuklara renkli dünyalar sunuyor. Eğlenceli vakit geçirmek için aşağıdaki linkten platforma erişim sağlayabilirsiniz.`
+            }
+        ]
+    },
+    {
+        id: "sinif1", label: "1. Sınıf",
+        icon: "https://img.icons8.com/?size=100&id=91774&format=png&color=000000", color: "#4ECDC4",
+        icerikler: [
+            {
+                title: "GCompris",
+                icon: "https://img.icons8.com/fluency/96/controller.png",
+                img: "https://www.gcompris.net/images/gcompris-logo.png",
+                type: "game", link: "https://www.gcompris.net/index-tr.html",
+                desc: `GCompris, 2–10 yaş arası çocuklar için çok sayıda etkinlik içeren, yüksek kaliteli bir eğitim yazılımı paketidir.
+Kimi etkinlikler oyuna yöneliktir; ancak yine de eğitime katkıda bulunur.
+
+• bilgisayar keşfi: klavye, fare, dokunmatik ekran…
+• okuma: harfler, sözcükler, okuma pratiği, metin yazma…
+• aritmetik: sayılar, işlemler, tablo belleği, sayma…
+• bilim: kanal kilidi, su çevrimi, yenilenebilir enerji…
+• coğrafya: ülkeler, bölgeler, kültürler…
+• oyunlar: satranç, bellek, top hizalama, adam asmaca…
+• diğer: renkler, şekiller, Braille, zamanı söyleme…
+
+GCompris 100'den fazla etkinlik sunar. Bilgisayarınıza veya tabletinize ücretsiz indirip kullanabilirsiniz.`
+            },
+            {
+                title: "PBS Kids",
+                icon: "https://img.icons8.com/fluency/96/tv-show.png",
+                img: "https://pbskids.org/pbskids-social.jpg",
+                type: "game", link: "https://pbskids.org",
+                desc: `Amerika Birleşik Devletleri'nde hizmet veren PBS'e bağlı PBS Kids, Türkiye'deki TRT Çocuk benzeri bir televizyon kanalı ve medya platformudur. İçeriklerinin İngilizce sunulduğu bu platformda 2-8 yaş aralığındaki çocuklara yönelik eğitici ve eğlenceli içerikler bulunmaktadır.
+
+Eğlenceli videoların yanında çocukların severek oynadığı Games bölümü de bulunmakta. Oyunlarda İngilizce betimlemeli destek bulunsa da çocuklar veli desteği ile oyun içeriklerine kolaylıkla erişebilir.`
+            },
+            {
+                title: "CodeMonkey Jr.",
+                icon: "https://img.icons8.com/fluency/96/monkey.png",
+                img: "https://app.codemonkey.com/images/monkey-logo.svg",
+                type: "game", link: "https://www.codemonkey.com/hour-of-code/codemonkey-jr/",
+                desc: `Maymun hedeflere ulaşmak istiyor ama bunu tek başına yapması biraz zor gibi. Çocuklarımız maymunu yönlendirerek hedeflere ulaşmasını sağlıyor. Bunu yaparken de temel kodlama becerilerini geliştiriyor. Çocuklara yönelik arayüzü, kolay kullanımı ve Türkçe dil desteği ile okul öncesi çocuklara kodlamanın temellerini eğlenceli bir şekilde öğretiyor.
+
+Herhangi bir üyelik oluşturmadan kullanılabilir.`
+            },
+            {
+                title: "Kodable",
+                icon: "https://img.icons8.com/fluency/96/robot.png",
+                img: "https://img.icons8.com/fluency/200/robot.png",
+                type: "game", link: "https://www.kodable.com/hour-of-code/self-guided",
+                desc: `Okul öncesinden 2. sınıf düzeyine kadar olan yaş aralığına uygun, renkli karakterleri, basit arayüzü ve sürükle bırak metoduyla kodlamayı çocuklara sevdiren bu platform ile çocuklar kendi oluşturdukları karakterler ile hedefleri tamamlamaya çalışıyor.
+
+Üyelik oluşturmadan platforma erişebilirsiniz. Play butonuna tıklayarak kodlamaya başlayabilirsiniz.`
+            },
+            {
+                title: "CodeCombat Jr.",
+                icon: "https://img.icons8.com/fluency/96/sword.png",
+                img: "https://codecombat.com/images/pages/home/logo.png",
+                type: "game", link: "https://codecombat.com/play/junior",
+                desc: `Code Combat, öğrencilere kodlama kavramlarını somut örneklerle öğretirken, aynı zamanda stratejik düşünme ve problem çözme becerilerini geliştiriyor. Oyun içerisindeki görevler ve bölümler, gerçek kodlama pratikleri üzerinden ilerleyerek, öğrencilerin bilgiyi pekiştirmesine yardımcı oluyor.
+
+Ücretsiz versiyonunu kullanarak çocuğunuzun ilerlemesini takip edebilir ve destek olabilirsiniz. Görsel olarak çocukların ilgisini çekmeyi başaran bu platform ile temel kodlama becerileri kolaylıkla edinilir.`
+            },
+            {
+                title: "Algo Dijital",
+                icon: "https://img.icons8.com/fluency/96/flow-chart.png",
+                img: "https://algodijital.com/img/logo.png",
+                type: "game", link: "https://algodijital.com",
+                desc: `Türkiye Eğitim Gönüllüleri Vakfı'nın (TEGV) Google.org desteği ile geliştirdiği kodlama eğitimi platformudur. Algo Dijital; çocuklarımıza, oyunlar üzerinden algoritmik düşünme kazanımı vermeyi hedefleyen bir oyun platformudur. Eğlenceli karakterler ve hikâyelerle çocukların hem dijital beceriler kazanmasına hem de hayatın her alanında faydalanacakları düşünsel kazanımları elde etmesine yardımcı olmayı amaçlıyor.
+
+Oyuna Türkçe ve İngilizce dil seçeneğiyle Windows, MacOS, Apple Store ve Google Play'den ücretsiz olarak ulaşabilirsiniz.`
+            },
+            {
+                title: "ScratchJr",
+                icon: "https://img.icons8.com/fluency/96/cat.png",
+                img: "https://www.scratchjr.org/img/scratchjr-logo.png",
+                type: "game", link: "https://www.scratchjr.org",
+                desc: `ScratchJr, çocuklara kodlama ve yaratıcı düşünce becerilerini öğretmek için tasarlanmış bir eğitim aracıdır. Scratch Jr, çocukların kendi hikâyelerini ve oyunlarını oluşturabilecekleri bir ortam sağlar. Bu, basit kodlama bloklarını bir araya getirerek yapılmaktadır. Kullanıcılar, karakterlerini hareket ettirebilir, ses ekleyebilir ve hatta kendi seslerini kaydedebilirler.
+
+Bu platform MIT tarafından geliştirilmiştir ve 5-7 yaş arası çocuklara yöneliktir. Tarayıcı üzerinden online erişmek için: codejr.org/scratchjr`
+            },
+            {
+                title: "Kodris",
+                icon: "https://img.icons8.com/fluency/96/python.png",
+                img: "https://img.icons8.com/fluency/200/python.png",
+                type: "game", link: "http://www.kodris.com",
+                desc: `Kodris, çocukların kodlama yolculuğuna ilk adımı atacakları eğlenceli ve etkili bir platformdur. Çocuklar, oyun oynayarak ve interaktif derslerle Python gibi güçlü bir programlama dilini öğrenme fırsatı bulurlar.
+
+Kodris, oyunlaştırılmış bir eğitim yaklaşımı benimseyerek, çocukların kodlama öğrenirken eğlenmelerini sağlar. Üyelik oluşturmadan etkinliklere erişmek için platformda yer alan "Ücretsiz Dene" butonuna tıklamanız yeterli.`
+            },
+            {
+                title: "Cody - EBA",
+                icon: "https://img.icons8.com/fluency/96/idea.png",
+                img: "https://eba.gov.tr/images/eba-logo.svg",
+                type: "game", link: "https://f.eba.gov.tr/cody/",
+                desc: `Cody, çocuklara kodlamanın temeli olan algoritma oluşturma becerisi kazandırmak için hazırlanmış bir oyundur. Kod yazabilmek için öncelikle algoritma kurmayı bilmeniz gerekmektedir. Algoritma, bir sorunu çözmek ya da belirlenmiş bir hedefe ulaşmak için işlem basamaklarının sırasıyla uygulanmasıdır.
+
+Cody oyununda karakterinizi belirtilen hedefe ulaştırmak için algoritmalar kurmalısınız. Basit arayüzü ile çocukların kodlama alanındaki ilk deneyimini kolaylaştırıyor.`
+            },
+            {
+                title: "MobilKod - EBA",
+                icon: "https://img.icons8.com/fluency/96/rocket.png",
+                img: "https://eba.gov.tr/images/eba-logo.svg",
+                type: "game", link: "http://mobilkod.eba.gov.tr",
+                desc: `Millî Eğitim Bakanlığınca, öğrencilere kodlama becerisi kazandırmak amacıyla tasarlanan, 120 bölümlük bir uzay görevinden sonra dünyaya dönen oyun karakteri "Maskod"un maceralarının işlendiği mobil oyun.
+
+YEĞİTEK Genel Müdürlüğünce hazırlanan mobil oyun, öğrencilere kodlama becerisi kazandırmak amaçlı öğretim araçlarından biri olarak tasarlandı. Mobil kod uygulaması ile öğrencilerin algoritmik düşünce gelişimine destek olunması hedeflendi.`
+            },
+            {
+                title: "Güvenli Çocuk",
+                icon: "https://img.icons8.com/fluency/96/security-shield-green.png",
+                img: "https://img.icons8.com/fluency/200/security-shield-green.png",
+                type: "game", link: "http://www.guvenlicocuk.org.tr",
+                desc: `Bünyesinde barındırdığı eğlenceli oyunlarla çocuklara keyifli zaman imkânı tanıyan platform ayrıca çocuklar için güvenli bir dijital ortam sunuyor. Siber zorbalık, güvenli internet, gizlilik ve dijital kimlik gibi konularda çocuklara eğlenceli ve öğretici içerikler sunmakta.
+
+Çocuklarımız bu platform ile hem eğlenceli zaman geçirecek hem de dijital ortamdaki tehlikelerden haberdar olacak ve korunma yollarını öğrenecek.`
+            },
+            {
+                title: "Interland",
+                icon: "https://img.icons8.com/fluency/96/internet.png",
+                img: "https://beinternetawesome.withgoogle.com/static/images/be-internet-awesome-og.png",
+                type: "game", link: "https://beinternetawesome.withgoogle.com/tr_all/interland",
+                desc: `İnterland, çocukların dijital güvenlikle ilgili önemli dersler konusunda uygulamalı alıştırma yapmasını sağlayan dört zorlu oyundan oluşan online bir maceradır. Oyunun yaratıcısı Google firmasıdır.
+
+Çocuklarda siber zorbalık hakkında farkındalık yaratmayı amaçlayan platform bunu eğlenceli ve aşamalı bir oyun olarak sunuyor. Renkli ve akıcı oyun hikâyesiyle çocukların oldukça ilgisini çeken bir oyundur. Oyunun arayüzü bütünüyle Türkçe olarak sunulmakta.`
+            },
+            {
+                title: "Quiver Vision",
+                icon: "https://img.icons8.com/fluency/96/camera.png",
+                img: "https://quivervision.com/wp-content/uploads/2020/02/QuiverVision-Logo-2020.png",
+                type: "activity", link: "https://quivervision.com/",
+                desc: `QUIVER özellikle küçük yaş grubu çocuklarımızla kullanabileceğiniz artırılmış gerçeklik içeren eğlenceli bir web 2.0 aracıdır. Çocuklar çıktısını aldığımız dosyalar üzerinde çalışmalarını yaptıktan sonra telefonumuzdaki uygulamayı açıp dosyaların üzerine tuttuğumuzda 3 veya 4 boyutlu olarak resimleri gözlemleyebiliyoruz.`
+            },
+            {
+                title: "TinyTap",
+                icon: "https://img.icons8.com/fluency/96/puzzle.png",
+                img: "https://img.icons8.com/fluency/200/puzzle.png",
+                type: "game", link: "https://campus.tinytap.com/tr",
+                desc: `Çocuklar için etkileşimli öğrenme oyunları ve dijital hikâyeler oluşturma ve oynama platformudur. Özellikle anaokulu ve ilkokul düzeyindeki çocuklara yönelik olarak tasarlanmıştır. Hem öğretmenler hem de ebeveynler, çocuklara özel içerikler hazırlayabilir veya başkalarının hazırladığı içerikleri kullanabilirler.
+
+Türkçe içerikler mevcuttur. Sağ üstten dil seçeneğine tıklayıp Türkçe'yi seçebilirsiniz.`
+            },
+            {
+                title: "Çevko Çocuk",
+                icon: "https://img.icons8.com/fluency/96/recycle.png",
+                img: "https://img.icons8.com/fluency/200/recycle.png",
+                type: "game", link: "http://www.cevkococuk.org/",
+                desc: `Çevre Koruma ve Ambalaj Atıkları Değerlendirme Vakfı tarafından geliştirilen platform çocuklarda çevre hakkında farkındalık oluşturmayı amaçlamaktadır. Çevki karakteri ile maceralara atlayan çocuklar hem çevre kirliliği hakkında bilgileniyor hem de eğlenceli oyunlar oynuyorlar.
+
+Bünyesinde eğitici oyunlar, animasyonlar, videolar, sanatsal faaliyetler bulunduran platform bilinçli bireyler yetiştirmeyi hedefliyor. Çünkü biliyoruz ki ağaç yaş iken eğilir.`
+            },
+            {
+                title: "Jigsaw Planet",
+                icon: "https://img.icons8.com/fluency/96/puzzle-2.png",
+                img: "https://img.icons8.com/fluency/200/puzzle-2.png",
+                type: "game", link: "https://www.jigsawplanet.com/?lang=tr",
+                desc: `Puzzle yapmayı seven çocuklar için online puzzle yapabilecekleri bir platform. Türkçe dil desteği sayesinde kullanımda herhangi bir sorun yaşamazsınız.
+
+Platformda bulunan mevcut bulmacalara erişebildiğiniz gibi üye olup kendi ekleyeceğiniz resimleri de birer puzzle hâline getirebilirsiniz.`
+            },
+            {
+                title: "Okuyorum Uygulaması",
+                icon: "https://img.icons8.com/fluency/96/book.png",
+                img: "https://img.icons8.com/fluency/200/book.png",
+                type: "link", link: "https://dersekranda.com/okuyorum-okuma-yazma-etkinlikleri/",
+                desc: `Çocukların okuma, matematik, Türkçe ve el becerilerini geliştirmek ve desteklemek için geliştirilmiş bir platformdur. Bu platformda eğitsel etkinliklerin yanında eğlenceli etkinlikler de yer almaktadır. Kısa hikâyeler ve masallarla çocuklar okuma becerilerini yaz tatilinde de geliştirmeye devam edebilir.`
+            },
+            {
+                title: "Serbest Okuma Etkinlikleri",
+                icon: "https://img.icons8.com/fluency/96/reading.png",
+                img: "https://img.icons8.com/fluency/200/reading.png",
+                type: "activity", link: "https://dersekranda.com/veriler/okuyorum/assetsDosyalar/etkinliklerTurkce/serbestOkumaMetinleri/anaSayfa/index.html",
+                desc: `Okumayı yeni öğrenen çocukların okuma becerilerini geliştirmek, anlamlı okumalarını pekiştirmek için hazırlanan bir etkinliktir. Çeşitli konular hakkında yazılmış serbest metinleri okuduktan sonra bu metinlerle ilgili sorular da pekiştirmelerini sağlıyor.
+
+Online olarak erişim sağlayabileceğiniz gibi bu serbest metinleri PDF olarak da indirip çıktı alarak çocuklara sunabilirsiniz.`
+            },
+            {
+                title: "Saatleri Öğreniyorum",
+                icon: "https://img.icons8.com/fluency/96/clock.png",
+                img: "https://img.icons8.com/fluency/200/clock.png",
+                type: "game", link: "https://dersekranda.com/veriler/saatler/index.html",
+                desc: `Çocukların hem analog hem de dijital saati öğrenmeleri için çeşitli alıştırmalar ve oyunların yer aldığı bu uygulamaya ücretsiz erişebilirsiniz.`
+            },
+            {
+                title: "Dikkat ve Zeka Etkinlikleri",
+                icon: "https://img.icons8.com/fluency/96/brain.png",
+                img: "https://img.icons8.com/fluency/200/brain.png",
+                type: "game", link: "https://dersekranda.com/veriler/dikkatZeka/assetsDosyalar/etkinliklerDikkatZeka/dikkatZeka/anaSayfa/index.html",
+                desc: `Çocukların dikkatini geliştiren ve çeşitli zeka oyunlarını barındıran uygulamaya ücretsiz olarak erişim sağlayabilirsiniz. Görsel zekâlarını geliştiren birden fazla uygulamaya erişebilirsiniz.`
+            },
+            {
+                title: "Çevko - Boyama Oyunu",
+                icon: "https://img.icons8.com/fluency/96/paint-palette.png",
+                img: "https://img.icons8.com/fluency/200/paint-palette.png",
+                type: "game", link: "https://www.cevkococuk.org/index.php?option=com_content&view=article&id=9&catid=12&Itemid=106",
+                desc: `Çevko Çocuk sitesinde yer alan boyama oyunu ile çocuklarımız sanatsal becerilerini sergiliyor. Boyama oyununda yer alan birçok karakterden istediğini seçip tuvalin başına geçen çocuklar renk seçip tıkladığı alanı boyuyor.`
+            },
+            {
+                title: "TRT Çocuk - Oyun Dünyası",
+                icon: "https://img.icons8.com/fluency/96/star.png",
+                img: "https://www.trtcocuk.net.tr/assets/img/trt-cocuk-logo.png",
+                type: "game", link: "https://www.trtcocuk.net.tr/oyun",
+                desc: `Zeka oyunlarından macera oyunlarına birçok oyunun yer aldığı TRT Çocuk Oyun Dünyası çocuklara renkli dünyalar sunuyor. Eğlenceli vakit geçirmek için aşağıdaki linkten platforma erişim sağlayabilirsiniz.`
+            }
+        ]
+    },
+    {
+        id: "sinif2", label: "2. Sınıf",
+        icon: "https://img.icons8.com/?size=100&id=43133&format=png&color=000000", color: "#45B7D1",
+        icerikler: [
+            {
+                title: "CodeMonkey Jr.",
+                icon: "https://img.icons8.com/fluency/96/monkey.png",
+                img: "https://app.codemonkey.com/images/monkey-logo.svg",
+                type: "game", link: "https://www.codemonkey.com/hour-of-code/codemonkey-jr/",
+                desc: `Maymun hedeflere ulaşmak istiyor ama bunu tek başına yapması biraz zor gibi. Çocuklarımız maymunu yönlendirerek hedeflere ulaşmasını sağlıyor. Bunu yaparken de temel kodlama becerilerini geliştiriyor. Türkçe dil desteği ile kodlamanın temellerini eğlenceli bir şekilde öğretiyor. Herhangi bir üyelik oluşturmadan kullanılabilir.`
+            },
+            {
+                title: "Kodable",
+                icon: "https://img.icons8.com/fluency/96/robot.png",
+                img: "https://img.icons8.com/fluency/200/robot.png",
+                type: "game", link: "https://www.kodable.com/hour-of-code/self-guided",
+                desc: `Okul öncesinden 2. sınıf düzeyine kadar olan yaş aralığına uygun, renkli karakterleri, basit arayüzü ve sürükle bırak metoduyla kodlamayı çocuklara sevdiren bu platform ile çocuklar kendi oluşturdukları karakterler ile hedefleri tamamlamaya çalışıyor. Üyelik oluşturmadan platforma erişebilirsiniz.`
+            },
+            {
+                title: "Kodlama Saati",
+                icon: "https://img.icons8.com/fluency/96/code.png",
+                img: "https://code.org/shared/images/social-og-code-default.png",
+                type: "game", link: "https://hourofcode.com/us/tr/learn",
+                desc: `Code.org platformunun derlediği Hour of Code (Kodlama Saati) hem kendi içinde barındırdığı hem de internet ortamında bulunan kodlama etkinliklerini öğrencilere sunuyor. Türkçe dil desteği barındıran etkinliklerin listelendiği bu platformda diğer dillerdeki etkinliklere de erişim sağlayabilirsiniz.
+
+Kategorize edilmiş etkinliklerin altında hangi yaş ve sınıf düzeyi için uygun oldukları belirtilmiştir.`
+            },
+            {
+                title: "Run Marco!",
+                icon: "https://img.icons8.com/fluency/96/run.png",
+                img: "https://img.icons8.com/fluency/200/run.png",
+                type: "game", link: "https://runmarco.com/",
+                desc: `"Herkes kod yazabilir" mottosuyla yola çıkan bu platform renkli içeriğiyle çocukların kodlama becerisi edinmesini ve mevcut becerilerini geliştirmeyi hedeflemektedir. Platformda Türkçe dil desteği de mevcut.
+
+İlk erişim sağladığınızda karşınıza çıkan ekran dil seçimi yapmanızı ister, burada Türkçeyi seçebilirsiniz. Hikâyeleştirilmiş oyun yapısıyla çocuklar hem bir hikâyeyi yaşayacak hem de kodlamayı öğrenecekler.`
+            },
+            {
+                title: "CodeCombat Jr.",
+                icon: "https://img.icons8.com/fluency/96/sword.png",
+                img: "https://codecombat.com/images/pages/home/logo.png",
+                type: "game", link: "https://codecombat.com/play/junior",
+                desc: `Code Combat, öğrencilere kodlama kavramlarını somut örneklerle öğretirken, aynı zamanda stratejik düşünme ve problem çözme becerilerini geliştiriyor. Oyun içerisindeki görevler ve bölümler, gerçek kodlama pratikleri üzerinden ilerleyerek, öğrencilerin bilgiyi pekiştirmesine yardımcı oluyor.
+
+Ücretsiz versiyonunu kullanarak çocuğunuzun ilerlemesini takip edebilir ve destek olabilirsiniz.`
+            },
+            {
+                title: "Algo Dijital",
+                icon: "https://img.icons8.com/fluency/96/flow-chart.png",
+                img: "https://algodijital.com/img/logo.png",
+                type: "game", link: "https://algodijital.com",
+                desc: `Türkiye Eğitim Gönüllüleri Vakfı'nın (TEGV) Google.org desteği ile geliştirdiği kodlama eğitimi platformudur. Algo Dijital; çocuklarımıza, oyunlar üzerinden algoritmik düşünme kazanımı vermeyi hedefleyen bir oyun platformudur. Kodlama, problem tanımlama ve çözme becerisi kazandırma, merak yaratma ve üretme kültürünü aşılama hedefleriyle çocuklar için dijital dünyanın kapısını aralıyor.`
+            },
+            {
+                title: "ScratchJr",
+                icon: "https://img.icons8.com/fluency/96/cat.png",
+                img: "https://www.scratchjr.org/img/scratchjr-logo.png",
+                type: "game", link: "https://www.scratchjr.org",
+                desc: `ScratchJr, çocuklara kodlama ve yaratıcı düşünce becerilerini öğretmek için tasarlanmış bir eğitim aracıdır. Scratch Jr, çocukların kendi hikâyelerini ve oyunlarını oluşturabilecekleri bir ortam sağlar. Kullanıcılar, karakterlerini hareket ettirebilir, ses ekleyebilir ve hatta kendi seslerini kaydedebilirler. Bu platform MIT tarafından geliştirilmiştir.`
+            },
+            {
+                title: "Kodris",
+                icon: "https://img.icons8.com/fluency/96/python.png",
+                img: "https://img.icons8.com/fluency/200/python.png",
+                type: "game", link: "http://www.kodris.com",
+                desc: `Kodris, çocukların kodlama yolculuğuna ilk adımı atacakları eğlenceli ve etkili bir platformdur. Çocuklar, oyun oynayarak ve interaktif derslerle Python gibi güçlü bir programlama dilini öğrenme fırsatı bulurlar. Kodris, oyunlaştırılmış bir eğitim yaklaşımı benimseyerek, çocukların kodlama öğrenirken eğlenmelerini sağlar.`
+            },
+            {
+                title: "Hacker Can",
+                icon: "https://img.icons8.com/fluency/96/hacker.png",
+                img: "https://img.icons8.com/fluency/200/hacker.png",
+                type: "game", link: "https://www.hackercan.com/tr/",
+                desc: `Çocuklara Türkçe olarak kodlama becerisi edindirmeyi amaçlayan bir platformdur. Çocuklar yaş grubuna veya öğrenme seviyesine uygun alanlarda programlama becerisi edinebilir veya mevcut bilgilerini geliştirebilir. Algoritma, problem çözme becerisi ve programlama becerileri konusunda oyun temelli etkinlikler mevcuttur.
+
+Oyun tabanlı öğrenme modeli üzerine kurgulanmış macera serisi, çizim ve stüdyo ekranları ile 6-9 yaş ve 9 yaş üstü her öğrencinin kolaylıkla istifade edebileceği keyifli bir platformdur.`
+            },
+            {
+                title: "Code for Life",
+                icon: "https://img.icons8.com/fluency/96/heart.png",
+                img: "https://img.icons8.com/fluency/200/heart.png",
+                type: "game", link: "https://www.codeforlife.education/play/",
+                desc: `Code for Life platformu çocuklara blok tabanlı programlama becerisi edindirmek için oluşturulmuştur. Renkli içeriği ve çocukların ilgisini çeken karakterler ve oyunlaştırılmış eğitim arayüzü ile çocukların ilgisini çekmekte. İngilizce dilinde eğitim veren platformda çocuklar sürükle bırak metodu ile algoritmik düşünme becerisi edinirler.
+
+Amaç karakterimizi istenen hedefe ulaştırmak. "Try Rapid Router" butonuna tıklayarak üyelik oluşturmadan blok kodlama yapabilirsiniz.`
+            },
+            {
+                title: "Cody - EBA",
+                icon: "https://img.icons8.com/fluency/96/idea.png",
+                img: "https://eba.gov.tr/images/eba-logo.svg",
+                type: "game", link: "https://f.eba.gov.tr/cody/",
+                desc: `Cody, çocuklara kodlamanın temeli olan algoritma oluşturma becerisi kazandırmak için hazırlanmış bir oyundur. Algoritma, bir sorunu çözmek ya da belirlenmiş bir hedefe ulaşmak için işlem basamaklarının sırasıyla uygulanmasıdır. Cody oyununda karakterinizi belirtilen hedefe ulaştırmak için algoritmalar kurmalısınız.`
+            },
+            {
+                title: "MobilKod - EBA",
+                icon: "https://img.icons8.com/fluency/96/rocket.png",
+                img: "https://eba.gov.tr/images/eba-logo.svg",
+                type: "game", link: "http://mobilkod.eba.gov.tr",
+                desc: `Millî Eğitim Bakanlığınca öğrencilere kodlama becerisi kazandırmak amacıyla tasarlanan, 120 bölümlük bir uzay görevinden sonra dünyaya dönen oyun karakteri "Maskod"un maceralarının işlendiği mobil oyun. Mobil kod uygulaması ile öğrencilerin algoritmik düşünce gelişimine destek olunması hedeflendi.`
+            },
+            {
+                title: "Güvenli Çocuk",
+                icon: "https://img.icons8.com/fluency/96/security-shield-green.png",
+                img: "https://img.icons8.com/fluency/200/security-shield-green.png",
+                type: "game", link: "http://www.guvenlicocuk.org.tr",
+                desc: `Bünyesinde barındırdığı eğlenceli oyunlarla çocuklara keyifli zaman imkânı tanıyan platform ayrıca çocuklar için güvenli bir dijital ortam sunuyor. Siber zorbalık, güvenli internet, gizlilik ve dijital kimlik gibi konularda çocuklara eğlenceli ve öğretici içerikler sunmakta.`
+            },
+            {
+                title: "Interland",
+                icon: "https://img.icons8.com/fluency/96/internet.png",
+                img: "https://beinternetawesome.withgoogle.com/static/images/be-internet-awesome-og.png",
+                type: "game", link: "https://beinternetawesome.withgoogle.com/tr_all/interland",
+                desc: `İnterland, çocukların dijital güvenlikle ilgili önemli dersler konusunda uygulamalı alıştırma yapmasını sağlayan dört zorlu oyundan oluşan online bir maceradır. Oyunun yaratıcısı Google firmasıdır. Renkli ve akıcı oyun hikâyesiyle çocukların oldukça ilgisini çeken bir oyundur. Oyunun arayüzü bütünüyle Türkçe olarak sunulmakta.`
+            },
+            {
+                title: "Çevko Çocuk",
+                icon: "https://img.icons8.com/fluency/96/recycle.png",
+                img: "https://img.icons8.com/fluency/200/recycle.png",
+                type: "game", link: "http://www.cevkococuk.org/",
+                desc: `Çevre Koruma ve Ambalaj Atıkları Değerlendirme Vakfı tarafından geliştirilen platform çocuklarda çevre hakkında farkındalık oluşturmayı amaçlamaktadır. Çevki karakteri ile maceralara atlayan çocuklar hem çevre kirliliği hakkında bilgileniyor hem de eğlenceli oyunlar oynuyorlar.`
+            },
+            {
+                title: "Jigsaw Planet",
+                icon: "https://img.icons8.com/fluency/96/puzzle-2.png",
+                img: "https://img.icons8.com/fluency/200/puzzle-2.png",
+                type: "game", link: "https://www.jigsawplanet.com/?lang=tr",
+                desc: `Puzzle yapmayı seven çocuklar için online puzzle yapabilecekleri bir platform. Türkçe dil desteği sayesinde kullanımda herhangi bir sorun yaşamazsınız. Platformda bulunan mevcut bulmacalara erişebildiğiniz gibi üye olup kendi ekleyeceğiniz resimleri de birer puzzle hâline getirebilirsiniz.`
+            }
+        ]
+    },
+    {
+        id: "sinif3", label: "3. Sınıf",
+        icon: "https://img.icons8.com/fluency/96/task-planning.png", color: "#96CEB4",
+        icerikler: [
+            {
+                title: "Kodlama Saati",
+                icon: "https://img.icons8.com/fluency/96/code.png",
+                img: "https://code.org/shared/images/social-og-code-default.png",
+                type: "game", link: "https://hourofcode.com/us/tr/learn",
+                desc: `Code.org platformunun derlediği Hour of Code (Kodlama Saati) hem kendi içinde barındırdığı hem de internet ortamında bulunan kodlama etkinliklerini öğrencilere sunuyor. Türkçe dil desteği barındıran etkinliklerin listelendiği bu platformda diğer dillerdeki etkinliklere de erişim sağlayabilirsiniz.
+
+Kategorize edilmiş etkinliklerin altında hangi yaş ve sınıf düzeyi için uygun oldukları belirtilmiştir.`
+            },
+            {
+                title: "Zeka Testi Merkezi",
+                icon: "https://img.icons8.com/fluency/96/brain.png",
+                img: "https://img.icons8.com/fluency/200/brain.png",
+                type: "game", link: "https://www.zekatestimerkezi.com/index.php",
+                desc: `İçeriğinde çocukların dikkatlerini test eden IQ testi barındıran bu platformda ayrıca çeşitli zeka oyunları da bulunmaktadır. IQ testinde çocuklar dikkatlerini sınayacak ve etkinlik sonunda çocuklara temsili bir IQ puanı vereceklerdir. Yaş aralığı bu puanın yüksek veya düşük çıkmasında önemli bir faktördür.
+
+Platformda yer alan zeka oyunları çocukların problem çözme becerilerini geliştirmektedir.`
+            },
+            {
+                title: "Scratch",
+                icon: "https://img.icons8.com/fluency/96/cat.png",
+                img: "https://scratch.mit.edu/images/scratch-og-image.png",
+                type: "game", link: "https://scratch.mit.edu/",
+                desc: `Blok tabanlı kodlama uygulamalarının en popüleri olan Scratch çocukların sürükle bırak metoduyla kodlama becerisi edinmesini amaçlamaktadır. Bu platformda çocuklar görsel düzenleyebilir, karakter oluşturabilir, oluşturduğu karakterleri animasyon ve oyunlarda kullanabilir.
+
+ABD'de bulunan MIT'in (Massachusetts Teknoloji Enstitüsü) geliştirdiği bu platform bütünüyle ücretsizdir. Hemen hemen her platformdan erişim sağlayabilirsiniz.`
+            },
+            {
+                title: "Scratch Kodlama Kartları",
+                icon: "https://img.icons8.com/fluency/96/cards.png",
+                img: "https://scratch.mit.edu/images/scratch-og-image.png",
+                type: "activity", link: "https://drive.google.com/a/oguzkaan.k12.tr/open?id=1ptdr1PR7uB2A6ZAkxvHRWJINIhdr6n6k",
+                desc: `Scratch platformunda oyun hazırlamak isteyen çocuklar için derlediğim bu Scratch kartları ile çocuklar kendi oyunlarını hazırlayabilecek. Kartlarda yer alan yönergeleri takip ettikleri takdirde kendi oyunlarını oluşturabilir ve eğer isterlerse ekstra içerikleri de oyunlarına ekleyebilirler.
+
+Birçok oyunun yer aldığı bu kartlara PDF olarak erişim sağlayabilirsiniz.`
+            },
+            {
+                title: "Compute It",
+                icon: "https://img.icons8.com/fluency/96/keyboard.png",
+                img: "https://img.icons8.com/fluency/200/keyboard.png",
+                type: "game", link: "https://compute-it.toxicode.fr/",
+                desc: `Klavyede yer alan yön oklarını kullanarak kodlama becerilerini test et. Bu uygulama ile çocukların problem çözme becerileri ve algoritmik düşünme becerileri gelişecek. Basit arayüzü ve kolay kullanımı ile çocukların ilgisini çeken bir uygulamadır. Türkçe dil desteği barındıran bu uygulama ile çocuklar döngüler, koşullar gibi temel kodlama becerilerini öğrenecekler.`
+            },
+            {
+                title: "Silent Teacher",
+                icon: "https://img.icons8.com/fluency/96/source-code.png",
+                img: "https://img.icons8.com/fluency/200/source-code.png",
+                type: "game", link: "https://silentteacher.toxicode.fr/",
+                desc: `Silent Teacher, çocuklara Java ve Python programlama dillerini temellerini öğretiyor. Kullanımı kolay arayüzü ile çocuklar kodlama alanındaki becerilerini geliştirebilirler. Değişken tipleri ve döngüler gibi temel kodlama yapılarını öğrenecek ve bunları kullanacaklar.`
+            },
+            {
+                title: "CodeMonkey Space Adventure",
+                icon: "https://img.icons8.com/fluency/96/monkey.png",
+                img: "https://app.codemonkey.com/images/monkey-logo.svg",
+                type: "game", link: "https://www.codemonkey.com/hour-of-code/space-adventure/",
+                desc: `Uzaydasın ve maymunun muzlarını toplayıp uzay aracıyla seyahatine devam etmesine yardım etmelisin. Space adventure ile çocuklar kodlama becerilerini kullanarak maymuna yardımcı oluyor. Çocukların hem yazarak hem de bloklara tıklayarak kodlama yapabildiği bu uygulamanın arayüzü İngilizce.
+
+Hesap oluşturmak istemiyorsanız "Start Playing" butonuna tıklamanız yeterli.`
+            },
+            {
+                title: "CodeCombat",
+                icon: "https://img.icons8.com/fluency/96/sword.png",
+                img: "https://codecombat.com/images/pages/home/logo.png",
+                type: "game", link: "https://codecombat.com/play",
+                desc: `Çocukların seçtikleri karakter ile maceraya atladığı bu platformda Python programlama dili kullanılıyor. Yönergelerin çocukları yönlendirdiği ve öğrenmelerini desteklediği bu platformun arayüzü Türkçe. Platforma erişim linkine tıkladıktan sonra karşınıza çıkan sayfada yaş aralığına uygun macerayı seçebilirsiniz.`
+            },
+            {
+                title: "Tinkercad",
+                icon: "https://img.icons8.com/fluency/96/3d-model.png",
+                img: "https://www.tinkercad.com/images/tinkercad-logo-wordmark.svg",
+                type: "game", link: "https://www.tinkercad.com/",
+                desc: `Tinkercad, 3 boyutlu modelleme yapmayı sağlayan bir programdır. Autodesk tarafından geliştirilen bu uygulamanın kullanımı çok basittir. Herkesin çok rahat kullanabileceği şekilde tasarlanan uygulamanın arayüzü çok renklidir. Öğrenciler üç boyutlu olarak tasarladıkları çizimleri üç boyutlu yazıcı aracılığıyla baskıya verebilir.
+
+Hem masaüstü hem de tablet ve telefonlarda kullanılabilen bir uygulamadır.`
+            },
+            {
+                title: "Kodu Game Lab",
+                icon: "https://img.icons8.com/fluency/96/gamepad.png",
+                img: "https://img.icons8.com/fluency/200/gamepad.png",
+                type: "game", link: "https://www.kodugamelab.com/",
+                desc: `Kodu Game Lab, çocuklara temel programlama prensiplerini öğretmek için tasarlanmış bir 3D oyun geliştirme ortamıdır. Kodu, yaratıcıların dünyanın arazisini inşa etmelerine, onu karakterler ve aksesuarlarla doldurmalarına ve ardından davranışlarını ve oyun kurallarını özel bir görsel programlama dilinde programlamalarına olanak tanır.
+
+Platformun internet sitesine girip "Get Kodu" butonuna tıklayarak indirme seçeneklerinden size uygun olanı kullanabilirsiniz.`
+            },
+            {
+                title: "Bilimcini",
+                icon: "https://img.icons8.com/fluency/96/microscope.png",
+                img: "https://img.icons8.com/fluency/200/microscope.png",
+                type: "link", link: "https://bilimcini.com",
+                desc: `Dinozorlar nasıl yok oldu? Gökyüzü neden mavi? Balıklar nasıl uyur? Mısır piramitlerinin gizemi nedir? Kayaç nedir?
+
+Çocukların doğa, hayvanlar, uzay ve daha birçok konuda kafasında onlarca soru olabilir. Bu platformun amacı çocukların merak ettikleri konular hakkında onlara bilgiler sunmak ve yeni meraklar uyandırmak.`
+            },
+            {
+                title: "Interland",
+                icon: "https://img.icons8.com/fluency/96/internet.png",
+                img: "https://beinternetawesome.withgoogle.com/static/images/be-internet-awesome-og.png",
+                type: "game", link: "https://beinternetawesome.withgoogle.com/tr_all/interland",
+                desc: `İnterland, çocukların dijital güvenlikle ilgili önemli dersler konusunda uygulamalı alıştırma yapmasını sağlayan dört zorlu oyundan oluşan online bir maceradır. Oyunun yaratıcısı Google firmasıdır.
+
+Çocuklarda siber zorbalık hakkında farkındalık yaratmayı amaçlayan platform bunu eğlenceli ve aşamalı bir oyun olarak sunuyor. Oyunun arayüzü bütünüyle Türkçe olarak sunulmakta.`
+            },
+            {
+                title: "Blockly Games",
+                icon: "https://img.icons8.com/fluency/96/block.png",
+                img: "https://blockly.games/static/icon.png",
+                type: "game", link: "https://blockly.games/?lang=tr",
+                desc: `Google tarafından geliştirilen bu platformda sekiz farklı kodlama etkinliği bulunmakta. Çocuklar en başta blok tabanlı kodlamanın amacını anlamak için bulmaca etkinliği çözüyor daha sonra gittikçe zorlaşan aşamalara geçiş yapıyor.
+
+Platforma eriştiğinizde varsayılan dil olarak İngilizce seçili olabilir. Sağ üst tarafta yer alan dil seçme alanından Türkçeyi seçebilirsiniz.`
+            },
+            {
+                title: "Pivot Animator",
+                icon: "https://img.icons8.com/fluency/96/film.png",
+                img: "https://pivotanimator.net/images/PivotAnimator_icon_v4.png",
+                type: "activity", link: "https://pivotanimator.net/",
+                desc: `Basit arayüzü ile çocuklara animasyon yapma imkânı tanıyan bir uygulamadır. Çocuklar çöp adamlar ve basit karakterler ile animasyon yapabilir ve hayal dünyasını yansıtabilir. Oluşturulan animasyona arkaplan veya çeşitli efektler eklenebilir.
+
+Çocuklar kendi fotoğraflarını veya beğendiği kişilerin fotoğraflarını da animasyonuna ekleyebilir. Pivot'un karakter kütüphanesinden de projelerimizde kullanmak üzere hazır figürleri indirebiliriz.`
+            }
+        ]
+    },
+    {
+        id: "sinif4", label: "4. Sınıf",
+        icon: "https://img.icons8.com/?size=100&id=43130&format=png&color=000000", color: "#DDA0DD",
+        icerikler: [
+            {
+                title: "Kodlama Saati",
+                icon: "https://img.icons8.com/fluency/96/code.png",
+                img: "https://code.org/shared/images/social-og-code-default.png",
+                type: "game", link: "https://hourofcode.com/us/tr/learn",
+                desc: `Code.org platformunun derlediği Hour of Code (Kodlama Saati) hem kendi içinde barındırdığı hem de internet ortamında bulunan kodlama etkinliklerini öğrencilere sunuyor. Türkçe dil desteği barındıran etkinliklerin listelendiği bu platformda diğer dillerdeki etkinliklere de erişim sağlayabilirsiniz.
+
+Kategorize edilmiş etkinliklerin altında hangi yaş ve sınıf düzeyi için uygun oldukları belirtilmiştir.`
+            },
+            {
+                title: "Zeka Testi Merkezi",
+                icon: "https://img.icons8.com/fluency/96/brain.png",
+                img: "https://img.icons8.com/fluency/200/brain.png",
+                type: "game", link: "https://www.zekatestimerkezi.com/index.php",
+                desc: `İçeriğinde çocukların dikkatlerini test eden IQ testi barındıran bu platformda ayrıca çeşitli zeka oyunları da bulunmaktadır. IQ testinde çocuklar dikkatlerini sınayacak ve etkinlik sonunda çocuklara temsili bir IQ puanı vereceklerdir. Yaş aralığı bu puanın yüksek veya düşük çıkmasında önemli bir faktördür.
+
+Platformda yer alan zeka oyunları çocukların problem çözme becerilerini geliştirmektedir.`
+            },
+            {
+                title: "mBlock",
+                icon: "https://img.icons8.com/fluency/96/block.png",
+                img: "https://mblock.cc/static/images/mblock-logo.svg",
+                type: "game", link: "https://mblock.cc/pages/downloads",
+                desc: `Mblock, blok tabanlı bir kodlama platformudur. Arayüzü ve kullanımı Scratch ile benzerdir. mBlock, STEAM, kodlama ve fiziksel kodlama eğitimlerinde yaygın olarak kullanılmaktadır. mBlock, yapay zekâ ve nesnelerin interneti uygulamaları geliştirmeye olanak veren araçları da içerir.
+
+Scratch 2 ve 3 ile uyumludur. Makeblock, Arduino, micro:bit, Tello gibi donanımları kodlamak için kullanılabilir. Çevrimiçi ve çevrimdışı olarak kullanılabilir.`
+            },
+            {
+                title: "CodeMonkey Coding Adventure",
+                icon: "https://img.icons8.com/fluency/96/monkey.png",
+                img: "https://app.codemonkey.com/images/monkey-logo.svg",
+                type: "game", link: "https://www.codemonkey.com/hour-of-code/coding-adventure/",
+                desc: `Maymunun hedeflerine ulaşması için ona yardımcı olmalıyız. Platformun basit yönlendirmeleri ile kodlayarak aşamaları tamamlıyoruz. Hesap oluşturmak istemiyorsanız "Start Playing" butonuna tıklamanız yeterli.`
+            },
+            {
+                title: "Scratch",
+                icon: "https://img.icons8.com/fluency/96/cat.png",
+                img: "https://scratch.mit.edu/images/scratch-og-image.png",
+                type: "game", link: "https://scratch.mit.edu/",
+                desc: `Blok tabanlı kodlama uygulamalarının en popüleri olan Scratch çocukların sürükle bırak metoduyla kodlama becerisi edinmesini amaçlamaktadır. Bu platformda çocuklar görsel düzenleyebilir, karakter oluşturabilir, oluşturduğu karakterleri animasyon ve oyunlarda kullanabilir.
+
+ABD'de bulunan MIT'in (Massachusetts Teknoloji Enstitüsü) geliştirdiği bu platform bütünüyle ücretsizdir. Hemen hemen her platformdan erişim sağlayabilirsiniz.`
+            },
+            {
+                title: "Scratch Kodlama Kartları",
+                icon: "https://img.icons8.com/fluency/96/cards.png",
+                img: "https://scratch.mit.edu/images/scratch-og-image.png",
+                type: "activity", link: "https://drive.google.com/a/oguzkaan.k12.tr/open?id=1ptdr1PR7uB2A6ZAkxvHRWJINIhdr6n6k",
+                desc: `Scratch platformunda oyun hazırlamak isteyen çocuklar için derlediğim bu Scratch kartları ile çocuklar kendi oyunlarını hazırlayabilecek. Kartlarda yer alan yönergeleri takip ettikleri takdirde kendi oyunlarını oluşturabilir ve eğer isterlerse ekstra içerikleri de oyunlarına ekleyebilirler.
+
+Birçok oyunun yer aldığı bu kartlara PDF olarak erişim sağlayabilirsiniz.`
+            },
+            {
+                title: "Compute It",
+                icon: "https://img.icons8.com/fluency/96/keyboard.png",
+                img: "https://img.icons8.com/fluency/200/keyboard.png",
+                type: "game", link: "https://compute-it.toxicode.fr/",
+                desc: `Klavyede yer alan yön oklarını kullanarak kodlama becerilerini test et. Bu uygulama ile çocukların problem çözme becerileri ve algoritmik düşünme becerileri gelişecek. Basit arayüzü ve kolay kullanımı ile çocukların ilgisini çeken bir uygulamadır. Türkçe dil desteği barındıran bu uygulama ile çocuklar döngüler, koşullar gibi temel kodlama becerilerini öğrenecekler.`
+            },
+            {
+                title: "Silent Teacher",
+                icon: "https://img.icons8.com/fluency/96/source-code.png",
+                img: "https://img.icons8.com/fluency/200/source-code.png",
+                type: "game", link: "https://silentteacher.toxicode.fr/",
+                desc: `Silent Teacher, çocuklara Java ve Python programlama dillerini temellerini öğretiyor. Kullanımı kolay arayüzü ile çocuklar kodlama alanındaki becerilerini geliştirebilirler. Değişken tipleri ve döngüler gibi temel kodlama yapılarını öğrenecek ve bunları kullanacaklar.`
+            },
+            {
+                title: "CodeMonkey Space Adventure",
+                icon: "https://img.icons8.com/fluency/96/monkey.png",
+                img: "https://app.codemonkey.com/images/monkey-logo.svg",
+                type: "game", link: "https://www.codemonkey.com/hour-of-code/space-adventure/",
+                desc: `Uzaydasın ve maymunun muzlarını toplayıp uzay aracıyla seyahatine devam etmesine yardım etmelisin. Space adventure ile çocuklar kodlama becerilerini kullanarak maymuna yardımcı oluyor.
+
+"Start Playing" butonuna tıklayarak hesap oluşturmadan oynamaya başlayabilirsiniz.`
+            },
+            {
+                title: "CodeCombat",
+                icon: "https://img.icons8.com/fluency/96/sword.png",
+                img: "https://codecombat.com/images/pages/home/logo.png",
+                type: "game", link: "https://codecombat.com/play",
+                desc: `Çocukların seçtikleri karakter ile maceraya atladığı bu platformda Python programlama dili kullanılıyor. Yönergelerin çocukları yönlendirdiği ve öğrenmelerini desteklediği bu platformun arayüzü Türkçe. Platforma erişim linkine tıkladıktan sonra karşınıza çıkan sayfada yaş aralığına uygun macerayı seçebilirsiniz.`
+            },
+            {
+                title: "Tinkercad",
+                icon: "https://img.icons8.com/fluency/96/3d-model.png",
+                img: "https://www.tinkercad.com/images/tinkercad-logo-wordmark.svg",
+                type: "game", link: "https://www.tinkercad.com/",
+                desc: `Tinkercad, 3 boyutlu modelleme yapmayı sağlayan bir programdır. Autodesk tarafından geliştirilen bu uygulamanın kullanımı çok basittir. Herkesin çok rahat kullanabileceği şekilde tasarlanan uygulamanın arayüzü çok renklidir. Öğrenciler üç boyutlu olarak tasarladıkları çizimleri üç boyutlu yazıcı aracılığıyla baskıya verebilir.
+
+Hem masaüstü hem de tablet ve telefonlarda kullanılabilen bir uygulamadır.`
+            },
+            {
+                title: "Kodu Game Lab",
+                icon: "https://img.icons8.com/fluency/96/gamepad.png",
+                img: "https://img.icons8.com/fluency/200/gamepad.png",
+                type: "game", link: "https://www.kodugamelab.com/",
+                desc: `Kodu Game Lab, çocuklara temel programlama prensiplerini öğretmek için tasarlanmış bir 3D oyun geliştirme ortamıdır. Kodu, yaratıcıların dünyanın arazisini inşa etmelerine, onu karakterler ve aksesuarlarla doldurmalarına ve ardından davranışlarını ve oyun kurallarını özel bir görsel programlama dilinde programlamalarına olanak tanır.
+
+Platformun internet sitesine girip "Get Kodu" butonuna tıklayarak indirme seçeneklerinden size uygun olanı kullanabilirsiniz.`
+            },
+            {
+                title: "Bilimcini",
+                icon: "https://img.icons8.com/fluency/96/microscope.png",
+                img: "https://img.icons8.com/fluency/200/microscope.png",
+                type: "link", link: "https://bilimcini.com",
+                desc: `Dinozorlar nasıl yok oldu? Gökyüzü neden mavi? Balıklar nasıl uyur? Mısır piramitlerinin gizemi nedir? Kayaç nedir?
+
+Çocukların doğa, hayvanlar, uzay ve daha birçok konuda kafasında onlarca soru olabilir. Bu platformun amacı çocukların merak ettikleri konular hakkında onlara bilgiler sunmak ve yeni meraklar uyandırmak.`
+            },
+            {
+                title: "Interland",
+                icon: "https://img.icons8.com/fluency/96/internet.png",
+                img: "https://beinternetawesome.withgoogle.com/static/images/be-internet-awesome-og.png",
+                type: "game", link: "https://beinternetawesome.withgoogle.com/tr_all/interland",
+                desc: `İnterland, çocukların dijital güvenlikle ilgili önemli dersler konusunda uygulamalı alıştırma yapmasını sağlayan dört zorlu oyundan oluşan online bir maceradır. Oyunun yaratıcısı Google firmasıdır. Renkli ve akıcı oyun hikâyesiyle çocukların oldukça ilgisini çeken bir oyundur. Oyunun arayüzü bütünüyle Türkçe olarak sunulmakta.`
+            },
+            {
+                title: "Blockly Games",
+                icon: "https://img.icons8.com/fluency/96/block.png",
+                img: "https://blockly.games/static/icon.png",
+                type: "game", link: "https://blockly.games/?lang=tr",
+                desc: `Google tarafından geliştirilen bu platformda sekiz farklı kodlama etkinliği bulunmakta. Çocuklar en başta blok tabanlı kodlamanın amacını anlamak için bulmaca etkinliği çözüyor daha sonra gittikçe zorlaşan aşamalara geçiş yapıyor.
+
+Platforma eriştiğinizde varsayılan dil olarak İngilizce seçili olabilir. Sağ üst tarafta yer alan dil seçme alanından Türkçeyi seçebilirsiniz.`
+            },
+            {
+                title: "Pivot Animator",
+                icon: "https://img.icons8.com/fluency/96/film.png",
+                img: "https://pivotanimator.net/images/PivotAnimator_icon_v4.png",
+                type: "activity", link: "https://pivotanimator.net/",
+                desc: `Basit arayüzü ile çocuklara animasyon yapma imkânı tanıyan bir uygulamadır. Çocuklar çöp adamlar ve basit karakterler ile animasyon yapabilir ve hayal dünyasını yansıtabilir. Oluşturulan animasyona arkaplan veya çeşitli efektler eklenebilir.
+
+Çocuklar kendi fotoğraflarını veya beğendiği kişilerin fotoğraflarını da animasyonuna ekleyebilir. Pivot'un karakter kütüphanesinden de projelerimizde kullanmak üzere hazır figürleri indirebiliriz.`
+            }
+        ]
+    },
+    {
+        id: "aile", label: "Aileler İçin",
+        icon: "https://img.icons8.com/fluency/96/family.png", color: "#F7DC6F",
+        icerikler: [
+            { title: "Güvenli İnternet", icon: "https://img.icons8.com/fluency/96/security-shield-green.png", img: "https://img.icons8.com/fluency/200/security-shield-green.png", type: "info", link: "", desc: `Çocuklar için güvenli internet kullanımı ve ebeveyn denetimi araçları hakkında bilgiler. Windows Aile Güvenliği uygulamasını kullanabilirsiniz.` },
+            { title: "Ekran Süresi", icon: "https://img.icons8.com/fluency/96/timer.png", img: "https://img.icons8.com/fluency/200/timer.png", type: "info", link: "", desc: `Yaş gruplarına göre önerilen ekran süresi: 5-6 yaş günde 1 saat, 7-12 yaş günde 1-2 saat. 20-20-20 kuralını uygulayın.` },
+            { title: "Uygulama Önerileri", icon: "https://img.icons8.com/fluency/96/application.png", img: "https://img.icons8.com/fluency/200/application.png", type: "link", link: "https://gcompris.net", desc: `GCompris, Khan Academy Kids ve Scratch gibi çocuklar için ücretsiz ve güvenli eğitim platformları.` }
+        ]
+    },
+    {
+        id: "iletisim", label: "İletişim",
+        icon: "https://img.icons8.com/fluency/96/contact-card.png", color: "#82C3EC",
+        icerikler: [
+            { title: "E-Posta", icon: "https://img.icons8.com/fluency/96/mail.png", img: "https://img.icons8.com/fluency/200/mail.png", type: "info", link: "mailto:bt@oguzkaan.com", desc: `bt@oguzkaan.com adresine e-posta gönderebilirsiniz.` },
+            { title: "Web Sitesi", icon: "https://img.icons8.com/fluency/96/domain.png", img: "https://img.icons8.com/fluency/200/domain.png", type: "link", link: "https://www.e-oguzkaan.com", desc: `Okulumuzun web sitesini ziyaret etmek için tıklayın.` },
+            { title: "Konum", icon: "https://img.icons8.com/fluency/96/map-pin.png", img: "https://img.icons8.com/fluency/200/map-pin.png", type: "info", link: "", desc: `Oğuzkaan Koleji · İstanbul` }
+        ]
+    }
+];
+
+
+/* ===========================================================
+   SİSTEM KODU — değiştirmeye gerek yok
+   =========================================================== */
+
+const TYPE_BADGES = {
+    video:    { label: "Video",    cls: "badge-video" },
+    game:     { label: "Oyun",     cls: "badge-game"  },
+    activity: { label: "Etkinlik", cls: "badge-activity" },
+    link:     { label: "Link",     cls: "badge-link"  },
+    info:     { label: "Bilgi",    cls: "badge-info"  }
+};
+
+let zIndexCounter = 1001;
+let activeWindow = null;
+const taskbarIconsContainer = document.getElementById('taskbar-icons');
+
+/* ----- Masaüstü ikonları oluştur ----- */
+function buildDesktop() {
+    const desktop = document.getElementById('desktop');
+    KLASORLER.forEach(k => {
+        const div = document.createElement('div');
+        div.className = 'desktop-icon';
+        div.innerHTML = `<img class="icon-img" src="${k.icon}"><span>${k.label}</span>`;
+        div.onclick = () => openWindow(k.id);
+        desktop.appendChild(div);
+    });
+}
+
+/* ----- Pencere aç ----- */
+function openWindow(folderId) {
+    const existing = document.getElementById('win-' + folderId);
+    if (existing) { existing.style.display='flex'; bringToFront('win-'+folderId); return; }
+
+    const k = KLASORLER.find(x => x.id === folderId);
+    if (!k) return;
+
+    const offset = (zIndexCounter % 8) * 28;
+    const win = document.createElement('div');
+    win.className = 'window';
+    win.id = 'win-' + folderId;
+    win.style.left = (80 + offset) + 'px';
+    win.style.top  = (40 + offset) + 'px';
+    win._currentFolder = folderId;
+
+    win.innerHTML = `
+        <div class="title-bar" onmousedown="startDrag(event,'${win.id}')">
+            <div class="title-bar-left">
+                <img src="${k.icon}">
+                <span id="win-title-${win.id}">${k.label} Etkinlikleri</span>
+            </div>
+            <div class="window-controls">
+                <button onclick="minimizeWindow('${win.id}')" title="Küçült">─</button>
+                <button onclick="maximizeWindow('${win.id}')" title="Büyüt">□</button>
+                <button class="close-btn" onclick="closeWindow('${win.id}')" title="Kapat">✕</button>
+            </div>
+        </div>
+        <div class="window-toolbar">
+            <button class="toolbar-nav-btn" disabled>←</button>
+            <button class="toolbar-nav-btn" disabled>→</button>
+            <div class="toolbar-path" id="win-path-${win.id}">${k.label} Etkinliklerine Hoş Geldiniz</div>
+            <div class="search-wrap">
+                <input class="toolbar-search" placeholder="Ara..." oninput="searchFiles(this,'${win.id}')">
+            </div>
+        </div>
+        <div class="window-body">
+            <div class="window-content">
+                <div class="file-explorer-view" id="file-view-${win.id}"></div>
+            </div>
+        </div>
+        <div class="window-statusbar">
+            <span id="win-status-${win.id}">${k.icerikler.length} öğe</span>
+        </div>
+    `;
+    document.body.appendChild(win);
+    renderFiles(win.id, folderId);
+    bringToFront(win.id);
+    addTaskbarIcon(win.id, k.icon, k.label);
+}
+
+function renderFiles(winId, folderId, filter='') {
+    const k = KLASORLER.find(x => x.id === folderId);
+    const container = document.getElementById('file-view-' + winId);
+    if (!container) return;
+    const items = k.icerikler.filter(i =>
+        !filter || i.title.toLowerCase().includes(filter) || i.desc.toLowerCase().includes(filter)
+    );
+    container.innerHTML = '';
+    items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'file-item';
+        const thumbColor = item.color || k.color || '#4a90d9';
+        const thumbHtml = item.img
+            ? `<img src="${item.img}" style="width:100%;height:64px;object-fit:cover;border-radius:6px 6px 0 0;display:block;">`
+            : `<div class="file-item-thumb" style="background: linear-gradient(135deg, ${thumbColor}cc, ${thumbColor}66)"><img src="${item.icon}"></div>`;
+        div.innerHTML = `${thumbHtml}<div class="file-label" style="padding:0 4px;margin-top:5px;">${item.title}</div>`;
+        div.onclick = () => openContentWindow(item, k);
+        container.appendChild(div);
+    });
+    const status = document.getElementById('win-status-' + winId);
+    if (status) status.textContent = items.length + ' öğe' + (filter ? ` ("${filter}" için)` : '');
+}
+
+function searchFiles(input, winId) {
+    const win = document.getElementById(winId);
+    const folder = win._currentFolder || KLASORLER[0].id;
+    renderFiles(winId, folder, input.value.toLowerCase().trim());
+}
+
+/* ----- İçerik detay penceresi ----- */
+function openContentWindow(item, k) {
+    const parentLabel = k.label;
+    const thumbColor = item.color || k.color || '#4a90d9';
+    const uid = 'cwin-' + Math.random().toString(36).slice(2,7);
+    const linkHtml = item.link
+        ? `<a class="content-detail-link" href="${item.link}" target="_blank">🔗 Etkinliğe Git</a>`
+        : '';
+    // Detay görseli: item.img varsa gerçek görsel, yoksa icon
+    const heroImgStyle = item.img
+        ? `width:100%;height:180px;object-fit:cover;display:block;`
+        : `width:64px;height:64px;border-radius:0;box-shadow:0 4px 16px rgba(0,0,0,0.18);`;
+    const heroWrapStyle = item.img
+        ? `width:100%;overflow:hidden;`
+        : `width:100%;height:120px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,${thumbColor}cc,${thumbColor}66);`;
+    const heroSrc = item.img || item.icon;
+
+    const win = document.createElement('div');
+    win.className = 'window';
+    win.id = uid;
+    win.style.left = '22%';
+    win.style.top  = '10%';
+    win.style.width = '520px';
+    win.style.height = item.img ? '480px' : '420px';
+    win.innerHTML = `
+        <div class="title-bar" onmousedown="startDrag(event,'${uid}')">
+            <div class="title-bar-left">
+                <img src="${item.icon}">
+                <span>${item.title}</span>
+            </div>
+            <div class="window-controls">
+                <button onclick="minimizeWindow('${uid}')">─</button>
+                <button onclick="maximizeWindow('${uid}')">□</button>
+                <button class="close-btn" onclick="closeWindow('${uid}')">✕</button>
+            </div>
+        </div>
+        <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;background:#fff;">
+            <div class="content-detail">
+                <div class="content-detail-hero" style="padding:0;flex-direction:column;gap:0;align-items:stretch;background:#f8f8f8;">
+                    <div style="${heroWrapStyle}">
+                        <img src="${heroSrc}" style="${heroImgStyle}">
+                    </div>
+                    <div style="padding:14px 24px 10px;">
+                        <h2 style="margin:0 0 2px;color:#1a1a2e;font-size:1.15em;">${item.title}</h2>
+                        <div style="font-size:0.8em;color:#888;font-weight:600;">${parentLabel}</div>
+                    </div>
+                </div>
+                <div class="content-detail-body">
+                    <p style="white-space:pre-line">${item.desc}</p>
+                    ${linkHtml}
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(win);
+    bringToFront(uid);
+    addTaskbarIcon(uid, item.icon, item.title);
+}
+
+/* ----- Kilit ekranı ----- */
+function unlockScreen() {
+    document.getElementById('lock-screen').classList.add('hidden');
+    document.getElementById('desktop').style.display = 'flex';
+    document.getElementById('taskbar').style.display  = 'flex';
+    setTimeout(() => {
+        document.getElementById('desktop').style.opacity = '1';
+        document.getElementById('taskbar').style.opacity  = '1';
+    }, 80);
+}
+
+/* ----- Görev çubuğu ----- */
+function addTaskbarIcon(winId, iconUrl, title) {
+    let icon = document.getElementById('tb-' + winId);
+    if (!icon) {
+        icon = document.createElement('div');
+        icon.id = 'tb-' + winId;
+        icon.className = 'taskbar-icon';
+        icon.innerHTML = `<img src="${iconUrl}"><span>${title}</span>`;
+        icon.onclick = () => toggleWindow(winId);
+        taskbarIconsContainer.appendChild(icon);
+    }
+    highlightTaskbarIcon(winId);
+}
+
+function highlightTaskbarIcon(winId) {
+    document.querySelectorAll('.taskbar-icon').forEach(i => i.classList.remove('active'));
+    const ic = document.getElementById('tb-' + winId);
+    if (ic) ic.classList.add('active');
+}
+
+function toggleWindow(winId) {
+    const win = document.getElementById(winId);
+    if (!win) return;
+    if (win.style.display === 'none') { win.style.display='flex'; bringToFront(winId); }
+    else if (activeWindow === winId) minimizeWindow(winId);
+    else bringToFront(winId);
+}
+
+function minimizeWindow(winId) {
+    document.getElementById(winId).style.display = 'none';
+    const ic = document.getElementById('tb-' + winId);
+    if (ic) ic.classList.remove('active');
+}
+
+function closeWindow(winId) {
+    const win = document.getElementById(winId);
+    if (win) win.remove();
+    const ic = document.getElementById('tb-' + winId);
+    if (ic) ic.remove();
+}
+
+function bringToFront(winId) {
+    zIndexCounter++;
+    document.getElementById(winId).style.zIndex = zIndexCounter;
+    activeWindow = winId;
+    highlightTaskbarIcon(winId);
+}
+
+function maximizeWindow(winId) {
+    const win = document.getElementById(winId);
+    if (win.classList.contains('maximized')) {
+        win.classList.remove('maximized');
+        win.style.width  = win.dataset.pw || '660px';
+        win.style.height = win.dataset.ph || '480px';
+        win.style.top    = win.dataset.pt || '60px';
+        win.style.left   = win.dataset.pl || '100px';
+    } else {
+        win.dataset.pw = win.style.width;  win.dataset.ph = win.style.height;
+        win.dataset.pt = win.style.top;    win.dataset.pl = win.style.left;
+        win.classList.add('maximized');
+        win.style.width='100%'; win.style.height='calc(100% - 48px)';
+        win.style.top='0'; win.style.left='0';
+    }
+    bringToFront(winId);
+}
+
+/* ----- Başlat menüsü ----- */
+function toggleStartMenu() {
+    const menu = document.getElementById('start-menu');
+    const btn  = document.getElementById('start-button');
+    if (menu.style.display === 'flex') {
+        menu.style.display = 'none'; btn.classList.remove('active');
+    } else {
+        menu.style.display = 'flex'; btn.classList.add('active');
+        setTimeout(() => document.addEventListener('click', closeMenuOutside), 0);
+    }
+}
+function closeMenuOutside(e) {
+    const menu = document.getElementById('start-menu');
+    const btn  = document.getElementById('start-button');
+    if (!menu.contains(e.target) && !btn.contains(e.target)) {
+        menu.style.display='none'; btn.classList.remove('active');
+        document.removeEventListener('click', closeMenuOutside);
+    }
+}
+
+function openExternalApp(url, name) {
+    window.open(url, '_blank');
+    document.getElementById('start-menu').style.display='none';
+    document.getElementById('start-button').classList.remove('active');
+}
+
+/* ----- Sürükle bırak ----- */
+let isDragging = false, dragOffX = 0, dragOffY = 0, dragWin = null;
+function startDrag(e, winId) {
+    if (e.target.closest('.window-controls')) return;
+    dragWin = document.getElementById(winId);
+    if (dragWin.classList.contains('maximized')) return;
+    bringToFront(winId);
+    isDragging = true;
+    dragOffX = e.clientX - dragWin.offsetLeft;
+    dragOffY = e.clientY - dragWin.offsetTop;
+    document.addEventListener('mousemove', doDrag);
+    document.addEventListener('mouseup', stopDrag);
+}
+function doDrag(e) {
+    if (!isDragging) return;
+    e.preventDefault();
+    dragWin.style.left = (e.clientX - dragOffX) + 'px';
+    dragWin.style.top  = (e.clientY - dragOffY) + 'px';
+}
+function stopDrag() {
+    isDragging = false; dragWin = null;
+    document.removeEventListener('mousemove', doDrag);
+    document.removeEventListener('mouseup', stopDrag);
+}
+
+/* ----- Saat / Tarih ----- */
+function updateTime() {
+    const now = new Date();
+    const hm  = now.toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit' });
+    const dm  = now.toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric' });
+    const dmFull = now.toLocaleDateString('tr-TR', { weekday:'long', day:'numeric', month:'long' });
+    document.getElementById('taskbar-time').textContent = hm;
+    document.getElementById('taskbar-date').textContent = now.toLocaleDateString('tr-TR');
+    document.getElementById('lock-time').textContent = hm;
+    document.getElementById('lock-date-top').textContent = dmFull;
+}
+
+/* ----- Çift tıklama düzeltme (masaüstüne tek tık ile seçim, çift tıkla aç) ----- */
+document.addEventListener('click', e => {
+    if (!e.target.closest('.desktop-icon') && !e.target.closest('.window') && !e.target.closest('#taskbar') && !e.target.closest('#start-menu')) {
+        document.querySelectorAll('.desktop-icon').forEach(d => d.style.background='');
+    }
+});
+
+/* ----- Başlat ----- */
+buildDesktop();
+updateTime();
+setInterval(updateTime, 1000);
+</script>
+</body>
+</html>
